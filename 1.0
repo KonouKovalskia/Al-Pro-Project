@@ -1,0 +1,183 @@
+//topik: Rekap Absensi Mahasiswa
+//Contoh Data: NIM, Nama, Jumlah Kehadiran
+//Contoh Proses: Rata-rata Kehadiran Mahasiswa, Mahasiswa paling rajin dan malas
+//Contoh Pengurutan: Urutan berdasarkan jumlah kehadiran
+
+// Starting from here is note for me(faiz)
+// I want percentage of kehadiran mahasiswa (If can, dont push urself too hard mate)
+// Maybe kita bisa urutkan berdasarkan persenase instead jumlah kehadiran
+// Mahasiswa paling rajin n malas using Nilai Ekstrim(i guess?)
+// for CRUD(Create, Read, update, delete), use the switch thingy from the calculator code(?)
+// create: bakal diisi array bakal stop sampai mana
+// read:
+// update: mengubah data yang udah ada
+// delete: dicari idx keberapa, lalu di hapus
+// berapa mahssiwa dibawah rata2 persentase
+// paling mudah insertion sort
+// selcetion sort : diulangterus sampai nemu
+// selection sort lebih mudah dijelaskn
+
+package main
+
+import "fmt"
+
+// type struct atau bentukan untuk menyimpan data mahasiswa
+type Mahasiswa struct {
+	NIM, JumlahKehadiran, TotalPertemuan int    // NIM, JumlahKehadiran, TotalPertemuan berupa integer
+	Nama                                 string //Nama berupa string
+}
+
+const NMAX int = 40 //nge set batas data atau batas array(bebas)
+
+type tabMahasiswa [NMAX]Mahasiswa
+
+func main() {
+	var data tabMahasiswa
+	var nData, pilih int
+
+	for {
+		menu()
+		fmt.Print("Pilih 0/1/2/3/4: ")
+		fmt.Scan(&pilih)
+
+		switch pilih {
+		case 0:
+			fmt.Println("Program Ended")
+			return
+		case 1:
+			fmt.Print("Masukkan Jumlah Data Mahasiswa: ")
+			fmt.Scan(&nData)
+			bacaDataMahasiswa(&data, &nData)
+		}
+
+	}
+}
+
+// tampilan menu
+func menu() {
+	fmt.Println("|==========================|")
+	fmt.Println("|		M E N U				|")
+	fmt.Println("|==========================|")
+	fmt.Println("| 1. Input data mahasiswa	|")
+	fmt.Println("| 2. Persentase Kehadiran	|")
+	fmt.Println("| 3. Rata-rata kehadiran	|")
+	fmt.Println("| 4. Paling Rajin			|")
+	fmt.Println("| 5. Paling Malas			|")
+	fmt.Println("| 6. Urutkan kehadiran ascending			|")
+	fmt.Println("| 5. Urutkan kehadiran descending			|")
+	fmt.Println("| 0. End Program 			|")
+	fmt.Println("|==========================|")
+
+	fmt.Println()
+
+}
+
+// fungsi untuk membaca data mahasiswa(create)
+func bacaDataMahasiswa(A *tabMahasiswa, n *int) {
+	// IS: Variabel n adalah jumlah mahasiswa
+	// FS: Data mahasiswa dibaca sebanyak n
+	var i int
+
+	// Just in case, jika data melebihi batas, maka akan disesuaikan menjadi n, walaupun data yang diproses hanya data sesuai NMAX
+	if *n > NMAX {
+		*n = NMAX
+	}
+
+	fmt.Print("Masukkan NIM, Nama, Jumlah Kehadiran, Total Pertemuan: ")
+	for i = 0; i < *n; i++ {
+		fmt.Scan(&A[i].NIM, &A[i].Nama, &A[i].JumlahKehadiran, &A[i].TotalPertemuan)
+
+	}
+}
+
+// Menghitung persentase kehadiran
+func HitungPersentase(A tabMahasiswa, i int) float64 {
+	return float64(A[i].JumlahKehadiran) / float64(A[i].TotalPertemuan) * 100
+}
+
+// Menampilkan persentase kehadiran
+func PersentaseKehadiran(A tabMahasiswa, n int) {
+	var i int
+
+	for i = 0; i < n; i++ {
+		persen := HitungPersentase(A, i)
+		fmt.Printf("NIM: %d, Nama: %s, Persentase: %2.f%%\n ", A[i].NIM, A[i].Nama, persen)
+	}
+
+}
+
+// fungsi menghitung  rata rata kehadiran dalam persentase
+func RataRataKehadiran(A tabMahasiswa, n int) float64 {
+	var i int
+	var JumlahPersen float64
+
+	for i = 0; i < n; i++ {
+		JumlahPersen += HitungPersentase(A, i)
+	}
+	return JumlahPersen / float64(n)
+}
+
+// fungis mencari yang paling rajin
+func mencariRajin(A tabMahasiswa, n int) int {
+	var i int
+
+	Rajin := A[0]
+
+	for i = 1; i < n; i++ {
+		if HitungPersentase(A[i]) > HitungPersentase(Rajin) {
+			Rajin = A[i]
+		}
+	}
+	return Rajin
+}
+
+// fungis mencari yang paling malas
+func mencariMalas(A tabMahasiswa, n int) int {
+	var i int
+
+	Malas := A[0]
+
+	for i = 1; i < n; i++ {
+		if HitungPersentase(A[i]) < HitungPersentase(Malas) {
+			Malas = A[i]
+		}
+	}
+	return Malas
+}
+
+func UrutDescendInsertion(A *tabMahasiswa, n int) {
+	var temp, i, j int
+	
+	i = 1
+	for  i = 1; i < n; i++ {
+		j = i
+		temp = A[j]
+		for j > 0 &7 temp > A[j-1]
+	}
+}
+
+func UrutDescendSelection() {
+	
+}
+
+func binarySearch(A tabMahasiswa, n, x int) int {
+	var left, right, mid, idx int
+
+	left = 0
+	right = n - 1
+	idx = -1
+
+	for left <= right && idx == -1 {
+		mid = (left + right) / 2
+
+		if x < A[mid] {
+			right = mid - 1
+
+		} else if x > A[mid] {
+			left = mid + 1
+		} else {
+			idx = mid
+		}
+	}
+	return idx
+}
