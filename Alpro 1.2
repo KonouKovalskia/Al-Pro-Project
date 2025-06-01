@@ -1,0 +1,238 @@
+//topik: Rekap Absensi Mahasiswa
+//Contoh Data: NIM, Nama, Jumlah Kehadiran
+//Contoh Proses: Rata-rata Kehadiran Mahasiswa, Mahasiswa paling rajin dan malas
+//Contoh Pengurutan: Urutan berdasarkan jumlah kehadiran
+
+// Starting from here is note for me(faiz)
+// I want percentage of kehadiran mahasiswa (If can, dont push urself too hard mate)
+// Maybe kita bisa urutkan berdasarkan persenase instead jumlah kehadiran
+// Mahasiswa paling rajin n malas using Nilai Ekstrim(i guess?)
+// for CRUD(Create, Read, update, delete), use the switch thingy from the calculator code(?)
+// create: bakal diisi array bakal stop sampai mana
+// read:
+// update: mengubah data yang udah ada
+// delete: dicari idx keberapa, lalu di hapus
+// berapa mahssiwa dibawah rata2 persentase
+// paling mudah insertion sort
+// selcetion sort : diulangterus sampai nemu
+// selection sort lebih mudah dijelaskn
+
+package main
+
+import "fmt"
+
+// type struct atau bentukan untuk menyimpan data mahasiswa
+type Mahasiswa struct {
+	NIM, JumlahKehadiran, TotalPertemuan int    // NIM, JumlahKehadiran, TotalPertemuan berupa integer
+	Nama                                 string //Nama berupa string
+}
+
+const NMAX int = 40 //nge set batas data atau batas array(bebas)
+
+type tabMahasiswa [NMAX]Mahasiswa
+
+func main() {
+	var data tabMahasiswa
+	var nData, pilih int
+
+	for {
+		menu()
+		fmt.Print("Pilih 0-6: ")
+		fmt.Scan(&pilih)
+
+		switch pilih {
+		case 0:
+			fmt.Println("Program Ended")
+			return
+		case 1:
+			fmt.Print("Masukkan Jumlah Data Mahasiswa: ")
+			fmt.Scan(&nData)
+			bacaDataMahasiswa(&data, &nData)
+		case 2:
+			fmt.Println("Persentase Kehadiran:")
+			PersentaseKehadiran(data, nData)
+		case 3:
+			rata := RataRataKehadiran(data, nData)
+			fmt.Printf("Rata-rata Kehadiran: %.2f%%\n", rata)
+		case 4:
+			idxRajin := mencariRajin(data, nData)
+			fmt.Printf("Mahasiswa Paling Rajin: %s (%.2f%%)\n", data[idxRajin].Nama, HitungPersentase(data[idxRajin]))
+		case 5:
+			idxMalas := mencariMalas(data, nData)
+			fmt.Printf("Mahasiswa Paling Malas: %s (%.2f%%)\n", data[idxMalas].Nama, HitungPersentase(data[idxMalas]))
+		case 6:
+			UrutAscendSelection(&data, nData)
+			fmt.Println("Data diurutkan berdasarkan kehadiran (Ascending):")
+			PersentaseKehadiran(data, nData)
+		case 7:
+			UrutDescendInsertion(&data, nData)
+			fmt.Println("Data diurutkan berdasarkan kehadiran (Descending):")
+			PersentaseKehadiran(data, nData)
+		default:
+			fmt.Println("Pilihan tidak valid.")
+		}
+	}
+}
+
+func menu() {
+	fmt.Println("|==============================|")
+	fmt.Println("|          M E N U            |")
+	fmt.Println("|==============================|")
+	fmt.Println("| 1. Input data mahasiswa      |")
+	fmt.Println("| 2. Persentase Kehadiran      |")
+	fmt.Println("| 3. Rata-rata Kehadiran       |")
+	fmt.Println("| 4. Mahasiswa Paling Rajin    |")
+	fmt.Println("| 5. Mahasiswa Paling Malas    |")
+	fmt.Println("| 6. Urutkan Ascending         |")
+	fmt.Println("| 7. Urutkan Descending        |")
+	fmt.Println("| 0. End Program               |")
+	fmt.Println("|==============================|")
+}
+
+// fungsi untuk membaca data mahasiswa(create)
+func bacaDataMahasiswa(A *tabMahasiswa, n *int) {
+	// IS: Variabel n adalah jumlah mahasiswa
+	// FS: Data mahasiswa dibaca sebanyak n
+	var i int
+
+	// Just in case, jika data melebihi batas, maka akan disesuaikan menjadi n, walaupun data yang diproses hanya data sesuai NMAX
+	if *n > NMAX {
+		*n = NMAX
+	}
+
+	fmt.Print("Masukkan NIM, Nama, Jumlah Kehadiran, Total Pertemuan: ")
+	for i = 0; i < *n; i++ {
+		fmt.Scan(&A[i].NIM, &A[i].Nama, &A[i].JumlahKehadiran, &A[i].TotalPertemuan)
+
+	}
+}
+
+// Menghitung persentase kehadiran
+func HitungPersentase(mhs Mahasiswa) float64 {
+	return float64(mhs.JumlahKehadiran) / float64(mhs.TotalPertemuan) * 100
+}
+
+// Menampilkan persentase kehadiran
+func PersentaseKehadiran(A tabMahasiswa, n int) {
+	var i int
+
+	for i = 0; i < n; i++ {
+		persen := HitungPersentase(A[i])
+		fmt.Printf("NIM: %d, Nama: %s, Persentase: %2.f%%\n ", A[i].NIM, A[i].Nama, persen)
+	}
+
+}
+
+// fungsi menghitung  rata rata kehadiran dalam persentase
+func RataRataKehadiran(A tabMahasiswa, n int) float64 {
+	var i int
+	var JumlahPersen float64
+
+	for i = 0; i < n; i++ {
+		JumlahPersen += HitungPersentase(A[i])
+	}
+	total := JumlahPersen / float64(n)
+	return total
+}
+
+// fungis mencari yang paling rajin
+func mencariRajin(A tabMahasiswa, n int) int {
+	var i, idxRajin int
+	var maxPersen float64
+
+	maxPersen = HitungPersentase(A[0])
+	idxRajin = 0
+
+	for i = 1; i < n; i++ {
+		persen := HitungPersentase(A[i])
+		if persen > maxPersen {
+			maxPersen = persen
+			idxRajin = i
+		}
+	}
+	return idxRajin
+}
+
+// fungis mencari yang paling malas
+func mencariMalas(A tabMahasiswa, n int) int {
+	var i, idxMalas int
+	var minPersen float64
+
+	minPersen = HitungPersentase(A[0])
+	idxMalas = 0
+
+	for i = 1; i < n; i++ {
+		persen := HitungPersentase(A[i])
+		if persen < minPersen {
+			minPersen = persen
+			idxMalas = i
+		}
+	}
+	return idxMalas
+}
+
+// Urut descend berdasarkan presentasi
+func UrutDescendInsertion(A *tabMahasiswa, n int) {
+	var i, pass int
+	var temp Mahasiswa
+
+	pass = 1
+	for pass <= n-1 {
+		i = pass
+		temp = A[pass]
+
+		for i > 0 && HitungPersentase(temp) > HitungPersentase(A[i-1]) {
+			A[i] = A[i-1]
+			i--
+		}
+		A[i] = temp
+		pass++
+	}
+
+}
+
+// Urur Ascend berdasarkan presentasi
+func UrutAscendSelection(A *tabMahasiswa, n int) {
+	var i, idx, pass int
+	var temp Mahasiswa
+
+	pass = 1
+
+	for pass < n {
+		idx = pass - 1
+		i = pass
+
+		for i < n {
+			if HitungPersentase(A[i]) < HitungPersentase(A[idx]) {
+				idx = i
+			}
+			i++
+		}
+		temp = A[pass-1]
+		A[pass-1] = A[idx]
+		A[idx] = temp
+		pass++
+	}
+
+}
+
+func binaryCariData(A tabMahasiswa, n, nim int) int {
+	var left, right, mid, idx int
+
+	left = 0
+	right = n - 1
+	idx = -1
+
+	for left <= right && idx == -1 {
+		mid = (left + right) / 2
+
+		if nim < A[mid].NIM {
+			right = mid - 1
+		} else if nim > A[mid].NIM {
+			left = mid + 1
+		} else {
+			idx = mid
+		}
+	}
+	return idx
+}
