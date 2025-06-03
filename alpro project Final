@@ -1,0 +1,330 @@
+//topik: Rekap Absensi Mahasiswa
+//Contoh Data: NIM, Nama, Jumlah Kehadiran
+//Contoh Proses: Rata-rata Kehadiran Mahasiswa, Mahasiswa paling rajin dan malas
+//Contoh Pengurutan: Urutan berdasarkan jumlah kehadiran
+
+package main
+
+import "fmt"
+
+// Struct Mahasiswa menyimpan data NIM, Nama, dan JumlahKehadiran
+type Mahasiswa struct {
+	NIM, JumlahKehadiran int    // NIM dan JumlahKehadiran bertipe integer
+	Nama                 string // Nama bertipe string
+}
+
+const NMAX int = 40 // Batas maksimum jumlah mahasiswa yang bisa ditampung
+
+// Tipe data array dari Mahasiswa dengan panjang maksimal NMAX
+type tabMahasiswa [NMAX]Mahasiswa
+
+var TotalPertemuan int // Menyimpan jumlah total pertemuan kelas
+
+func main() {
+	// IS: Program dimulai dengan data kosong
+	// FS: Program menampilkan menu dan menjalankan operasi sesuai pilihan user hingga user memilih keluar
+	var data tabMahasiswa // Menyimpan data semua mahasiswa
+	var nData, pilih int  // nData: jumlah data mahasiswa, pilih: input pilihan menu
+
+	for {
+		menu()                   // Menampilkan menu
+		fmt.Print("Pilih 0-9: ") // Input pilihan menu dari user
+		fmt.Scan(&pilih)
+		fmt.Println()
+
+		switch pilih {
+		case 0:
+			fmt.Println("Program Ended") // Keluar dari program
+			return
+		case 1:
+			// Input jumlah pertemuan dan jumlah mahasiswa
+			fmt.Print("Masukkan Total Pertemuan: ")
+			fmt.Scan(&TotalPertemuan)
+			fmt.Print("Masukkan Jumlah Data Mahasiswa: ")
+			fmt.Scan(&nData)
+			bacaDataMahasiswa(&data, &nData) // Memasukkan data mahasiswa
+		case 2:
+			tampilkanSemuaData(data, nData) // Menampilkan semua data
+		case 3:
+			updateDataMahasiswa(&data, nData) // Mengubah data mahasiswa
+		case 4:
+			deleteMahasiswa(&data, &nData) // Menghapus data mahasiswa
+		case 5:
+			// Menghitung dan menampilkan rata-rata kehadiran
+			rata := RataRataKehadiran(data, nData)
+			fmt.Printf("Rata-rata Kehadiran: %.2f%%\n", rata)
+		case 6:
+			// Mencari mahasiswa paling rajin
+			idxRajin := mencariRajin(data, nData)
+			fmt.Printf("Mahasiswa Paling Rajin: %s (%.2f%%)\n", data[idxRajin].Nama, HitungPersentase(data[idxRajin], TotalPertemuan))
+		case 7:
+			// Mencari mahasiswa paling malas
+			idxMalas := mencariMalas(data, nData)
+			fmt.Printf("Mahasiswa Paling Malas: %s (%.2f%%)\n", data[idxMalas].Nama, HitungPersentase(data[idxMalas], TotalPertemuan))
+		case 8:
+			// Menampilkan jumlah mahasiswa di bawah rata-rata
+			fmt.Printf("Jumlah mahasiswa di bawah rata-rata: %d\n", HitungDiBawahRataRata(data, nData))
+		case 9:
+			// Menu pengurutan data
+			fmt.Println("1. Urutkan Ascending")
+			fmt.Println("2. Urutkan Descending")
+			var urut int
+			fmt.Print("Pilih: ")
+			fmt.Scan(&urut)
+			if urut == 1 {
+				UrutAscendSelection(&data, nData) // Pengurutan naik
+			} else {
+				UrutDescendInsertion(&data, nData) // Pengurutan turun
+			}
+			tampilkanSemuaData(data, nData) // Tampilkan hasil urutan
+		default:
+			fmt.Println("Pilihan tidak valid.") // Validasi input menu
+		}
+	}
+}
+
+func menu() {
+	// IS: Fungsi dipanggil untuk menampilkan menu
+	// FS: Menu sistem dengan opsi 0-9 ditampilkan ke layar
+	blue := "\033[36m"
+	reset := "\033[0m"
+
+	fmt.Println(blue + "\n╔══════════════════════════════════════════════╗")
+	fmt.Println("║                  MENU                        ║")
+	fmt.Println("╠══════════════════════════════════════════════╣")
+	fmt.Println("║ 1. Tambah Data Mahasiswa (Create)            ║")
+	fmt.Println("║ 2. Tampilkan Semua Data (Read)               ║")
+	fmt.Println("║ 3. Ubah Data Mahasiswa (Update)              ║")
+	fmt.Println("║ 4. Hapus Data Mahasiswa (Delete)             ║")
+	fmt.Println("║ 5. Rata-rata Kehadiran                       ║")
+	fmt.Println("║ 6. Mahasiswa Paling Rajin                    ║")
+	fmt.Println("║ 7. Mahasiswa Paling Malas                    ║")
+	fmt.Println("║ 8. Mahasiswa Di Bawah Rata-rata              ║")
+	fmt.Println("║ 9. Urutkan Berdasarkan Kehadiran             ║")
+	fmt.Println("║ 0. Keluar                                    ║")
+	fmt.Println("╚══════════════════════════════════════════════╝" + reset) //reset untuk agar warna selanjutnya tidak ikutan biru
+}
+
+// fungsi untuk membaca data mahasiswa(create)
+func bacaDataMahasiswa(A *tabMahasiswa, n *int) {
+	// IS: Variabel n adalah jumlah mahasiswa yang akan diinput, array A kosong atau berisi data lama
+	// FS: Data mahasiswa dibaca sebanyak n dan disimpan ke dalam array A
+	var i int
+
+	// Just in case, jika data melebihi batas, maka akan disesuaikan menjadi n, walaupun data yang diproses hanya data sesuai NMAX
+	if *n > NMAX {
+		*n = NMAX // Membatasi jumlah data agar tidak melebihi kapasitas array
+	}
+
+	fmt.Print("Masukkan NIM, Nama, Jumlah Kehadiran: ")
+	for i = 0; i < *n; i++ {
+		fmt.Scan(&A[i].NIM, &A[i].Nama, &A[i].JumlahKehadiran)
+	}
+}
+
+// Menghitung persentase kehadiran
+func HitungPersentase(mhs Mahasiswa, TotalPertemuan int) float64 {
+	// IS: Struct mahasiswa dengan data JumlahKehadiran dan TotalPertemuan
+	// FS: Mengembalikan nilai persentase kehadiran
+	if TotalPertemuan == 0 {
+		return 0 // Mencegah pembagian nol
+	}
+	return float64(mhs.JumlahKehadiran) / float64(TotalPertemuan) * 100
+}
+
+// Menampilkan persentase kehadiran
+func PersentaseKehadiran(A tabMahasiswa, n int) {
+	// IS: Array A berisi data mahasiswa sebanyak n
+	// FS: Menampilkan NIM, Nama, dan persentase kehadiran setiap mahasiswa ke layar
+	var i int
+
+	for i = 0; i < n; i++ {
+		persen := HitungPersentase(A[i], TotalPertemuan)
+		fmt.Printf("NIM: %d, Nama: %s, Persentase: %2.f%%\n ", A[i].NIM, A[i].Nama, persen)
+	}
+}
+
+// fungsi menghitung  rata rata kehadiran dalam persentase
+func RataRataKehadiran(A tabMahasiswa, n int) float64 {
+	// IS: Array A berisi data mahasiswa sebanyak n
+	// FS: Mengembalikan nilai rata-rata persentase kehadiran semua mahasiswa
+	var i int
+	var JumlahPersen float64
+
+	for i = 0; i < n; i++ {
+		JumlahPersen += HitungPersentase(A[i], TotalPertemuan)
+	}
+	return JumlahPersen / float64(n)
+}
+
+// fungis mencari yang paling rajin
+func mencariRajin(A tabMahasiswa, n int) int {
+	// IS: Array A berisi data mahasiswa sebanyak n
+	// FS: Mengembalikan indeks mahasiswa dengan persentase kehadiran tertinggi
+	var i, idxRajin int
+	var maxPersen float64
+
+	maxPersen = HitungPersentase(A[0], TotalPertemuan)
+	idxRajin = 0
+
+	for i = 1; i < n; i++ {
+		persen := HitungPersentase(A[i], TotalPertemuan)
+		if persen > maxPersen {
+			maxPersen = persen
+			idxRajin = i
+		}
+	}
+	return idxRajin
+}
+
+// fungis mencari yang paling malas
+func mencariMalas(A tabMahasiswa, n int) int {
+	// IS: Array A berisi data mahasiswa sebanyak n
+	// FS: Mengembalikan indeks mahasiswa dengan persentase kehadiran terendah
+	var i, idxMalas int
+	var minPersen float64
+
+	minPersen = HitungPersentase(A[0], TotalPertemuan)
+	idxMalas = 0
+
+	for i = 1; i < n; i++ {
+		persen := HitungPersentase(A[i], TotalPertemuan)
+		if persen < minPersen {
+			minPersen = persen
+			idxMalas = i
+		}
+	}
+	return idxMalas
+}
+
+// Urut descend berdasarkan presentasi
+func UrutDescendInsertion(A *tabMahasiswa, n int) {
+	// IS: Array A berisi data mahasiswa sebanyak n dalam urutan acak
+	// FS: Array A terurut secara descending berdasarkan persentase kehadiran menggunakan insertion sort
+	var i, pass int
+	var temp Mahasiswa
+
+	pass = 1
+	for pass <= n-1 {
+		i = pass
+		temp = A[pass]
+
+		for i > 0 && HitungPersentase(temp, TotalPertemuan) > HitungPersentase(A[i-1], TotalPertemuan) {
+			A[i] = A[i-1]
+			i--
+		}
+		A[i] = temp
+		pass++
+	}
+
+}
+
+// Urur Ascend berdasarkan presentasi
+func UrutAscendSelection(A *tabMahasiswa, n int) {
+	// IS: Array A berisi data mahasiswa sebanyak n dalam urutan acak
+	// FS: Array A terurut secara ascending berdasarkan persentase kehadiran menggunakan selection sort
+	var i, idx, pass int
+	var temp Mahasiswa
+
+	pass = 1
+
+	for pass < n {
+		idx = pass - 1
+		i = pass
+
+		for i < n {
+			if HitungPersentase(A[i], TotalPertemuan) < HitungPersentase(A[idx], TotalPertemuan) {
+				idx = i
+			}
+			i++
+		}
+		temp = A[pass-1]
+		A[pass-1] = A[idx]
+		A[idx] = temp
+		pass++
+	}
+
+}
+
+func HitungDiBawahRataRata(A tabMahasiswa, n int) int {
+	// IS: Array A berisi data mahasiswa sebanyak n
+	// FS: Mengembalikan jumlah mahasiswa yang memiliki persentase kehadiran di bawah rata-rata
+	rata := RataRataKehadiran(A, n)
+	jumlah := 0
+	for i := 0; i < n; i++ {
+		if HitungPersentase(A[i], TotalPertemuan) < rata {
+			jumlah++
+		}
+	}
+	return jumlah
+}
+
+func tampilkanSemuaData(A tabMahasiswa, n int) {
+	// IS: Array A berisi data mahasiswa sebanyak n
+	// FS: Menampilkan semua data mahasiswa (NIM, Nama, Kehadiran, dan persentase) ke layar
+	for i := 0; i < n; i++ {
+		fmt.Printf("NIM: %d, Nama: %s, Kehadiran: %d/%d (%.2f%%)\n",
+			A[i].NIM, A[i].Nama, A[i].JumlahKehadiran, TotalPertemuan, HitungPersentase(A[i], TotalPertemuan))
+	}
+}
+
+func updateDataMahasiswa(A *tabMahasiswa, n int) {
+	// IS: Array A berisi data mahasiswa sebanyak n, user memasukkan NIM yang ingin diubah
+	// FS: Data mahasiswa dengan NIM tertentu berhasil diupdate atau menampilkan pesan tidak ditemukan
+	var nim int
+
+	fmt.Print("Masukkan NIM mahasiswa yang ingin diubah: ")
+	fmt.Scan(&nim)
+
+	idx := binaryCariData(*A, n, nim)
+	if idx == -1 {
+		fmt.Println("Mahasiswa tidak ditemukan.")
+	} else {
+		fmt.Print("Masukkan data baru (Nama, Jumlah Kehadiran: ")
+		fmt.Scan(&A[idx].Nama, &A[idx].JumlahKehadiran)
+		fmt.Println("Data berhasil diubah.")
+	}
+}
+
+func deleteMahasiswa(A *tabMahasiswa, n *int) {
+	// IS: Array A berisi data mahasiswa sebanyak n, user memasukkan NIM yang ingin dihapus
+	// FS: Data mahasiswa dengan NIM tertentu berhasil dihapus dan jumlah data berkurang 1, atau menampilkan pesan tidak ditemukan
+	var nim int
+
+	fmt.Print("Masukkan NIM mahasiswa yang ingin dihapus: ")
+	fmt.Scan(&nim)
+
+	idx := binaryCariData(*A, *n, nim)
+	if idx == -1 {
+		fmt.Println("Mahasiswa tidak ditemukan.")
+	} else {
+		for i := idx; i < *n-1; i++ {
+			A[i] = A[i+1]
+		}
+		*n--
+		fmt.Println("Data berhasil dihapus.")
+	}
+}
+
+func binaryCariData(A tabMahasiswa, n, nim int) int {
+	// IS: Array A berisi data mahasiswa sebanyak n, nim adalah NIM yang dicari
+	// FS: Mengembalikan indeks mahasiswa dengan NIM tertentu, atau -1 jika tidak ditemukan
+	var left, right, mid, idx int
+
+	left = 0
+	right = n - 1
+	idx = -1
+
+	for left <= right && idx == -1 {
+		mid = (left + right) / 2
+
+		if nim < A[mid].NIM {
+			right = mid - 1
+		} else if nim > A[mid].NIM {
+			left = mid + 1
+		} else {
+			idx = mid
+		}
+	}
+	return idx
+}
